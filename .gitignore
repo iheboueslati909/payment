@@ -1,0 +1,108 @@
+# .NET Core
+*.swp
+*.*~
+project.lock.json
+.DS_Store
+*.pyc
+nupkg/
+
+# Visual Studio Code
+.vscode
+.vs
+
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+build/
+bld/
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+msbuild.log
+msbuild.err
+msbuild.wrn
+
+# Visual Studio
+.vs/
+*.ncrunch*
+*.dotCover
+*.vspscc
+*.vssscc
+*.psess
+*.vsp
+*.vspx
+
+# Rider
+.idea/
+
+# NuGet Packages
+*.nupkg
+# The packages folder can be ignored because of Package Restore
+**/packages/*
+# except build/, which is used as an MSBuild target.
+!**/packages/build/
+# NuGet v3's project.json files produces more ignorable files
+*.nuget.props
+*.nuget.targets
+
+# Environment Files
+*.env
+.env.*
+appsettings.Development.json
+appsettings.Production.json
+appsettings.Staging.json
+
+# Test Results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+TestResults/
+
+# Docker
+.docker/
+docker-compose.override.yml
+
+# Others
+*.log
+*.tmp
+*.temp
+node_modules/
+bower_components/
+*.dbmdl
+*.dbproj.schemaview
+*.pfx
+*.publishsettings
+orleans.codegen.cs
+
+# SQL Server files
+*.mdf
+*.ldf
+*.ndf
+
+# Business Intelligence projects
+*.rdl.data
+*.bim.layout
+*.bim_*.settings
+*.rptproj.rsuser
+
+# Sensitive Data
+**/Properties/launchSettings.json
+**/secrets.json
+**/secrets.*.json
+
+# Code coverage
+*.opencover.xml
+*.coverage
+*.coveragexml
+
+# Migrations (optional, uncomment if you want to ignore migrations)
+# **/Migrations/*
