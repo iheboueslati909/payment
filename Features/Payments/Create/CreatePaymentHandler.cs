@@ -18,17 +18,20 @@ public class CreatePaymentHandler : ICommandHandler<CreatePaymentCommand, Create
     private readonly IJwtValidator _jwtValidator;
     private readonly IPaymentProvider _paymentProvider;
     private readonly AppDbContext _dbContext;
+    private readonly IConfiguration _configuration;
 
     public CreatePaymentHandler(
         IHttpContextAccessor httpContext,
         IJwtValidator jwtValidator,
         IPaymentProvider paymentProvider,
-        AppDbContext dbContext)
+        AppDbContext dbContext,
+        IConfiguration configuration)
     {
         _httpContext = httpContext;
         _jwtValidator = jwtValidator;
         _paymentProvider = paymentProvider;
         _dbContext = dbContext;
+        _configuration = configuration;
     }
 
     public async Task<CreatePaymentResult> Handle(
@@ -44,7 +47,13 @@ public class CreatePaymentHandler : ICommandHandler<CreatePaymentCommand, Create
             return CreatePaymentResult.Failed("No authorization token provided");
         }
 
-        var jwtResult = await _jwtValidator.ValidateToken(token, "app-secret");
+        var jwtKey = _configuration["Jwt:Key"];
+        if (string.IsNullOrEmpty(jwtKey))
+        {
+            return CreatePaymentResult.Failed("Invalid JWT configuration - missing JWT key");
+        }
+
+        var jwtResult = await _jwtValidator.ValidateToken(token, jwtKey);
         if (!jwtResult.IsValid)
         {
             return CreatePaymentResult.Failed($"Invalid token: {jwtResult.Error}");
