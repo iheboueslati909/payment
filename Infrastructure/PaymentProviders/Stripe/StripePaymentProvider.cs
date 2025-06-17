@@ -19,6 +19,7 @@ public class StripePaymentProvider : IPaymentProvider
         string currency,
         string userId,
         string paymentMethodId,
+        string appId,
         CancellationToken cancellationToken)
     {
         try
@@ -32,10 +33,11 @@ public class StripePaymentProvider : IPaymentProvider
                 Metadata = new Dictionary<string, string>
                 {
                     ["PaymentId"] = paymentId.ToString(),
-                    ["UserId"] = userId
+                    ["UserId"] = userId,
+                    ["appId"] = appId
                 },
                 Confirm = true, // Immediately confirm the payment
-                PaymentMethodTypes = new List<string> { "card" },
+                PaymentMethodTypes = new List<string> { "card" }, //TODO check this
                 CaptureMethod = "automatic"
             };
 

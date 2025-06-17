@@ -8,6 +8,7 @@ public interface IPaymentProvider
         string currency,
         string userId,
         string paymentMethodId,
+        string appId,
         CancellationToken cancellationToken);
 }
 

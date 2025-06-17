@@ -5,4 +5,5 @@ public record CreatePaymentRequest(
     string Currency,
     string PaymentMethodId,
     string UserId,
+    string AppId,
     string IdempotencyKey);

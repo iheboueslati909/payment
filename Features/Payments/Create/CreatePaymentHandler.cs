@@ -96,6 +96,7 @@ public class CreatePaymentHandler : ICommandHandler<CreatePaymentCommand, Create
                 payment.Currency,
                 payment.UserId,
                 command.PaymentMethodId,
+                command.AppId,
                 cancellationToken);
 
             payment.Status = chargeResult.Success ? PaymentStatus.Successful : PaymentStatus.Failed;

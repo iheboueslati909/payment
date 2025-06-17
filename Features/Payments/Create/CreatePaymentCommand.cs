@@ -7,6 +7,7 @@ public record CreatePaymentCommand(
     string Currency,
     string PaymentMethodId,
     string UserId,
+    string AppId,
     string IdempotencyKey) : ICommand<CreatePaymentResult>;
 
 public record CreatePaymentResult

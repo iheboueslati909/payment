@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Security.Claims;
 
 namespace PaymentGateway.Infrastructure.Auth;
 
@@ -8,7 +9,7 @@ public class JwtValidator : IJwtValidator
 {
     private readonly IConfiguration _configuration;
     private const string AppIdClaim = "appId";
-    private const string RoleClaim = "role";
+    private const string RoleClaim = ClaimTypes.Role;
 
     public JwtValidator(IConfiguration configuration)
     {

@@ -30,6 +30,7 @@ public class PaymentsController : ControllerBase
             request.Currency,
             request.PaymentMethodId,
             request.UserId,
+            request.AppId,
             request.IdempotencyKey);
 
         var result = await _dispatcher.Send(command, cancellationToken);
