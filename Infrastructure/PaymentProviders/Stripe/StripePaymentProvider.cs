@@ -1,5 +1,8 @@
 using Stripe;
 using Microsoft.Extensions.Options;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Stripe.Checkout;
 
 namespace PaymentGateway.Infrastructure.PaymentProviders.Stripe;
 
@@ -13,48 +16,46 @@ public class StripePaymentProvider : IPaymentProvider
         StripeConfiguration.ApiKey = _apiKey;
     }
 
-    public async Task<PaymentProviderResult> ChargeAsync(
-        Guid paymentId,
-        decimal amount,
-        string currency,
-        string userId,
-        string paymentMethodId,
-        string appId,
-        CancellationToken cancellationToken)
+    public async Task<CreateCheckoutSessionResult> CreateCheckoutSessionAsync(CreateCheckoutSessionRequest request)
     {
-        try
+        var options = new SessionCreateOptions
         {
-            var service = new PaymentIntentService();
-            var createOptions = new PaymentIntentCreateOptions
+            PaymentMethodTypes = new List<string> { "card" },
+            Mode = "payment",
+            LineItems = new List<SessionLineItemOptions>
             {
-                Amount = (long)(amount * 100),
-                Currency = currency.ToLower(),
-                PaymentMethod = paymentMethodId,
-                Metadata = new Dictionary<string, string>
+                new SessionLineItemOptions
                 {
-                    ["PaymentId"] = paymentId.ToString(),
-                    ["UserId"] = userId,
-                    ["appId"] = appId
-                },
-                Confirm = true, // Immediately confirm the payment
-                PaymentMethodTypes = new List<string> { "card" }, //TODO check this
-                CaptureMethod = "automatic"
-            };
+                    PriceData = new SessionLineItemPriceDataOptions
+                    {
+                        Currency = request.Currency,
+                        UnitAmount = (long)(request.Amount * 100), // Stripe expects amount in cents
+                        ProductData = new SessionLineItemPriceDataProductDataOptions
+                        {
+                            Name = "Payment"
+                        }
+                    },
+                    Quantity = 1
+                }
+            },
+            Metadata = new Dictionary<string, string>
+            {
+                { "IntendId", request.IntendId },
+                { "UserId", request.UserId },
+                { "AppId", request.AppId },
+                { "IdempotencyKey", request.IdempotencyKey }
+            },
+            SuccessUrl = "https://yourdomain.com/payment/success?session_id={CHECKOUT_SESSION_ID}",
+            CancelUrl = "https://yourdomain.com/payment/cancel"
+        };
 
-            var intent = await service.CreateAsync(createOptions, cancellationToken: cancellationToken);
+        var service = new SessionService();
+        var session = await service.CreateAsync(options);
 
-            return intent.Status == "succeeded"
-                ? PaymentProviderResult.Succeeded(intent.Id)
-                : PaymentProviderResult.Failed($"Payment failed: {intent.LastPaymentError?.Message ?? "Unknown error"}");
-        }
-        catch (StripeException ex)
+        return new CreateCheckoutSessionResult
         {
-            return PaymentProviderResult.Failed($"Stripe error: {ex.Message}");
-        }
+            CheckoutUrl = session.Url,
+            SessionId = session.Id
+        };
     }
-}
-
-public class StripeOptions
-{
-    public string ApiKey { get; set; } = string.Empty;
 }

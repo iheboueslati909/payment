@@ -1,20 +1,14 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using PaymentGateway.Infrastructure.Auth;
 using PaymentGateway.Infrastructure.Database;
 using PaymentGateway.Infrastructure.PaymentProviders;
 using PaymentGateway.Common.Interfaces;
-using PaymentGateway.Features.Payments.Create;
 using PaymentGateway.Infrastructure.PaymentProviders.Stripe;
 using PaymentGateway.Infrastructure.Commands;
 using PaymentGateway.Infrastructure.Outbox;
 using PaymentGateway.BackgroundWorkers;
 using Microsoft.EntityFrameworkCore;
-using Npgsql.EntityFrameworkCore.PostgreSQL;
 using MassTransit;
-using MassTransit.RabbitMqTransport;
-using Scrutor;
+using PaymentGateway.Features.Payments.Webhook;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -48,6 +42,8 @@ builder.Services.Scan(scan => scan
 builder.Services.Configure<StripeOptions>(
     builder.Configuration.GetSection("Stripe"));
 builder.Services.AddScoped<IPaymentProvider, StripePaymentProvider>();
+// Stripe signature verification
+builder.Services.AddSingleton<IStripeSignatureVerifier, StripeSignatureVerifier>();
 
 // MassTransit/RabbitMQ
 builder.Services.AddMassTransit(x =>
