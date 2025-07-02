@@ -82,10 +82,10 @@ jobs:
           --startup-project ./Payment.csproj \
           --output migrate \
           --context AppDbContext \
-          --self-contained true \
+          --self-contained \
           --runtime linux-x64
 
-    - name: Run Migration Bundle
-      run: dotnet ./migrate.dll --verbose
+    - name: Run EF Migration Bundle
+      run: ./migrate --verbose
       env:
         ConnectionStrings__DefaultConnection: ${{ secrets.DEV_DB_CONNECTION_STRING }}
