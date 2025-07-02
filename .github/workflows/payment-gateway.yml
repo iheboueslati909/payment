@@ -75,14 +75,15 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
 
-    # Migrate DbContext in single-project solution
     - name: Create EF Bundle
       run: |
         dotnet ef migrations bundle \
           --project ./Payment.csproj \
           --startup-project ./Payment.csproj \
-          --output migrate.dll \
-          --context AppDbContext
+          --output migrate \
+          --context AppDbContext \
+          --self-contained true \
+          --runtime linux-x64
 
     - name: Run Migration Bundle
       run: dotnet ./migrate.dll --verbose
