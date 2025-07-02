@@ -88,4 +88,4 @@ jobs:
     - name: Run EF Migration Bundle
       run: ./migrate --verbose
       env:
-        ConnectionStrings__DefaultConnection: ${{ secrets.DEV_DB_CONNECTION_STRING }}
+        ConnectionStrings__Default: ${{ secrets.DEV_DB_CONNECTION_STRING }}
