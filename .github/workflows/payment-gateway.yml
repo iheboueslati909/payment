@@ -10,7 +10,7 @@ env:
   AZURE_WEBAPP_PACKAGE_PATH: publish
   CONFIGURATION: Release
   DOTNET_CORE_VERSION: 9.0.x
-  WORKING_DIRECTORY: ./payment
+  WORKING_DIRECTORY: .
   ConnectionStrings__DefaultConnection: ${{ secrets.DEV_DB_CONNECTION_STRING }}
 
 jobs:
