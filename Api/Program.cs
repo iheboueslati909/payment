@@ -25,7 +25,8 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(
         builder.Configuration.GetConnectionString("DefaultConnection"),
-        x => x.MigrationsAssembly(typeof(Program).Assembly.GetName().Name)));
+        x => x.MigrationsAssembly(typeof(Program).Assembly.GetName().Name)
+        ));
 
 // Auth & Commands
 builder.Services.AddSingleton<IJwtValidator, JwtValidator>();
@@ -69,6 +70,23 @@ builder.Services.AddHostedService<OutboxWorker>();
 builder.Services.AddHealthChecks();
 
 var app = builder.Build();
+
+var scopeFactory = app.Services.GetRequiredService<IServiceScopeFactory>();
+using (var scope = scopeFactory.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var connStr = builder.Configuration.GetConnectionString("DefaultConnection") ?? "";
+
+    var connection = await db.Database.CanConnectAsync();
+    if (connection)
+    {
+        Console.WriteLine($"✅ Successfully connected to the database");
+    }
+    else
+    {
+        Console.WriteLine($"❌ Failed to connect to the database");
+    }
+}
 
 // Development middleware
 if (app.Environment.IsDevelopment())
