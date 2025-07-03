@@ -11,48 +11,26 @@ env:
   CONFIGURATION: Release
   DOTNET_CORE_VERSION: 9.0.x
   WORKING_DIRECTORY: .
+  ConnectionStrings__DefaultConnection: ${{ secrets.DEV_DB_CONNECTION_STRING }}
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    
     - name: Setup .NET SDK
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_CORE_VERSION }}
-    
-    - name: Restore dependencies
+    - name: Restore
       run: dotnet restore "${{ env.WORKING_DIRECTORY }}"
-    
     - name: Build
       run: dotnet build "${{ env.WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-restore
-    
     - name: Test
-      run: dotnet test "${{ env.WORKING_DIRECTORY }}" --no-build --verbosity normal
-    
-    - name: Install EF Tool
-      run: dotnet tool install --global dotnet-ef
-    
-    - name: Run Database Migrations
-      run: |
-        dotnet ef database update \
-          --project "${{ env.WORKING_DIRECTORY }}/Payment.csproj" \
-          --startup-project "${{ env.WORKING_DIRECTORY }}/Payment.csproj" \
-          --context AppDbContext \
-          --verbose
-      env:
-        ConnectionStrings__DefaultConnection: ${{ secrets.DEV_DB_CONNECTION_STRING }}
-      timeout-minutes: 5
-    
+      run: dotnet test "${{ env.WORKING_DIRECTORY }}" --no-build
     - name: Publish
-      run: dotnet publish "${{ env.WORKING_DIRECTORY }}" \
-          --configuration ${{ env.CONFIGURATION }} \
-          --no-build \
-          --output "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}"
-    
-    - name: Upload Artifact
+      run: dotnet publish "${{ env.WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-build --output "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}"
+    - name: Publish Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: webapp
@@ -60,27 +38,54 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
-    needs: build
     permissions:
-      id-token: write
-      contents: read
+      id-token: write   # Required for OIDC
+      contents: read    # Optional (needed for checking out code)
+    needs: build
     steps:
-    - name: Download Artifact
+    - name: Download artifact from build job
       uses: actions/download-artifact@v4
       with:
         name: webapp
         path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
-    
     - name: Azure Login (OIDC)
       uses: azure/login@v2
       with:
         client-id: ${{ secrets.AZURE_CLIENT_ID }}
         tenant-id: ${{ secrets.AZURE_TENANT_ID }}
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-    
+
     - name: Deploy to Azure WebApp
       uses: azure/webapps-deploy@v2
       with:
         app-name: ${{ env.AZURE_WEBAPP_NAME }}
         package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
-        slot-name: production
+    
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_CORE_VERSION }}
+
+    - name: Install EF Core CLI
+      run: dotnet tool install --global dotnet-ef
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Create EF Bundle
+      run: |
+        dotnet ef migrations bundle \
+          --project ./Payment.csproj \
+          --startup-project ./Payment.csproj \
+          --output migrate \
+          --context AppDbContext \
+          --self-contained \
+          --runtime linux-x64
+
+    - name: Run EF Migration Bundle
+      run: ./migrate --verbose
+      env:
+        ConnectionStrings__Default: ${{ secrets.DEV_DB_CONNECTION_STRING }}
