@@ -9,11 +9,25 @@ using PaymentGateway.BackgroundWorkers;
 using Microsoft.EntityFrameworkCore;
 using MassTransit;
 using PaymentGateway.Features.Payments.Webhook;
+using Asp.Versioning;
+using Eventify.Payment.Api.Infrastructure.Messaging;
+// using PaymentGateway.Api.Middlewares; // For ExceptionHandlingMiddleware
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add service defaults
-// builder.Services.AddServiceDefaults();
+// --- Service Registration ---
+
+// Add global exception handling middleware (custom)
+// builder.Services.AddTransient<ExceptionHandlingMiddleware>();
+
+// API Versioning (future-proofing)
+builder.Services.AddApiVersioning(options =>
+{
+    options.DefaultApiVersion = new ApiVersion(1, 0);
+    options.AssumeDefaultVersionWhenUnspecified = true;
+    options.ReportApiVersions = true;
+    options.ApiVersionReader = new UrlSegmentApiVersionReader();
+});
 
 // Core services
 builder.Services.AddControllers();
@@ -28,38 +42,46 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         x => x.MigrationsAssembly(typeof(Program).Assembly.GetName().Name)
         ));
 
+// Validate critical configuration
+builder.Services.AddOptions<StripeOptions>()
+    .Bind(builder.Configuration.GetSection("Stripe"))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
+builder.Services.AddOptions<RabbitMqConfig>()
+    .Bind(builder.Configuration.GetSection("RabbitMQ"))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
 // Auth & Commands
 builder.Services.AddSingleton<IJwtValidator, JwtValidator>();
 builder.Services.AddScoped<ICommandDispatcher, CommandDispatcher>();
 
-// Command handlers registration
+// Command handlers registration (vertical slice)
 builder.Services.Scan(scan => scan
     .FromAssemblyOf<Program>()
     .AddClasses(classes => classes.AssignableTo(typeof(ICommandHandler<,>)))
     .AsImplementedInterfaces()
     .WithScopedLifetime());
 
-// Payment providers
+// Payment providers (abstracted)
 builder.Services.Configure<StripeOptions>(
     builder.Configuration.GetSection("Stripe"));
 builder.Services.AddScoped<IPaymentProvider, StripePaymentProvider>();
-// Stripe signature verification
 builder.Services.AddSingleton<IStripeSignatureVerifier, StripeSignatureVerifier>();
 
 // MassTransit/RabbitMQ
 builder.Services.AddMassTransit(x =>
 {
-    x.SetKebabCaseEndpointNameFormatter();
-    
+    // x.SetKebabCaseEndpointNameFormatter();
     x.UsingRabbitMq((context, cfg) =>
     {
         var rabbitConfig = builder.Configuration.GetSection("RabbitMQ").Get<RabbitMqConfig>();
-        cfg.Host(rabbitConfig!.Host, "/", h =>
+        cfg.Host(new Uri(rabbitConfig.Host), h =>
         {
             h.Username(rabbitConfig.Username);
             h.Password(rabbitConfig.Password);
         });
-        
         cfg.ConfigureEndpoints(context);
     });
 });
@@ -67,25 +89,45 @@ builder.Services.AddMassTransit(x =>
 // Outbox Pattern
 builder.Services.AddScoped<OutboxProcessor>();
 builder.Services.AddHostedService<OutboxWorker>();
+
+// Register idempotency cleanup worker (future-proof, if implemented)
+// builder.Services.AddHostedService<IdempotencyCleanupWorker>(); // <-- implement this worker as needed
+
 builder.Services.AddHealthChecks();
+builder.Services.AddSingleton<IRabbitMqConnectionChecker, RabbitMqConnectionChecker>();
+
+// --- App Pipeline ---
 
 var app = builder.Build();
 
-var scopeFactory = app.Services.GetRequiredService<IServiceScopeFactory>();
-using (var scope = scopeFactory.CreateScope())
+// Global exception handling
+// app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+// Check RabbitMQ connection before starting
+using (var scope = app.Services.CreateScope())
+{
+    var rabbitChecker = scope.ServiceProvider.GetRequiredService<IRabbitMqConnectionChecker>();
+    try
+    {
+        await rabbitChecker.EnsureConnectionIsAvailableAsync();
+    }
+    catch (Exception ex)
+    {
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        logger.LogCritical(ex, "RabbitMQ is unavailable. Application will shut down.");
+        return;
+    }
+}
+
+// Check DB connection at startup
+using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    var connStr = builder.Configuration.GetConnectionString("DefaultConnection") ?? "";
-
     var connection = await db.Database.CanConnectAsync();
     if (connection)
-    {
-        Console.WriteLine($"✅ Successfully connected to the database");
-    }
+        app.Logger.LogInformation("✅ Successfully connected to the database");
     else
-    {
-        Console.WriteLine($"❌ Failed to connect to the database");
-    }
+        app.Logger.LogCritical("❌ Failed to connect to the database");
 }
 
 // Development middleware
@@ -99,7 +141,7 @@ if (app.Environment.IsDevelopment())
 // Security middleware
 app.UseHttpsRedirection();
 app.UseCors(x => x
-    .WithOrigins(builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? Array.Empty<string>())
+    .WithOrigins(builder.Configuration.GetSection("AllowedHosts").Get<string[]>() ?? Array.Empty<string>())
     .AllowAnyMethod()
     .AllowAnyHeader());
 
@@ -112,4 +154,8 @@ app.MapHealthChecks("/health");
 
 await app.RunAsync();
 
-public record RabbitMqConfig(string Host, string Username, string Password);
+// --- Records & Configs ---
+// Change from record to class with parameterless constructor and init-only properties
+
+
+// ...implement IdempotencyCleanupWorker and ExceptionHandlingMiddleware as needed...
