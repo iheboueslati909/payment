@@ -42,6 +42,10 @@ namespace PaymentGateway.Features.Payments
             // Use the verifier to get the endpoint secret for this app (multi-tenant)
             var endpointSecret = _verifier.GetEndpointSecret(request); // Implement this method as needed
 
+            Console.WriteLine($"*************** Stripe Webhook received. JSON: {json}");
+            Console.WriteLine($"*************** Stripe Webhook received. Signature: {signature}");
+            Console.WriteLine($"*************** Stripe Webhook received. Endpoint Secret: {endpointSecret}");
+
             Event stripeEvent;
             try
             {
