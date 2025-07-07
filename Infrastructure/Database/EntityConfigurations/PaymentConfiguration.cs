@@ -49,6 +49,9 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Features.Payments.M
         builder.Property(p => p.CreatedAt)
             .IsRequired();
 
+        builder.Property(p => p.Provider)
+            .IsRequired();
+
         // Index for querying by AppId (tenant isolation)
         builder.HasIndex(p => p.AppId);
 

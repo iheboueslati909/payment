@@ -14,5 +14,6 @@ public class Payment
     public string IdempotencyKey { get; set; }
     public string CheckoutUrl { get; set; }
     public DateTime CreatedAt { get; set; }
+    public PaymentProvider Provider { get; set; } = PaymentProvider.Stripe; // Default to Stripe
 
 }
