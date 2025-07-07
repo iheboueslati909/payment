@@ -17,7 +17,7 @@ public class RabbitMqConnectionChecker : IRabbitMqConnectionChecker
     public async Task EnsureConnectionIsAvailableAsync(CancellationToken cancellationToken = default)
     {
         var factory = new ConnectionFactory();
-
+        Console.WriteLine("Checking RabbitMQ connection..." , _configuration["RabbitMQ:Uri"]);
         factory.Uri = new Uri(_configuration["RabbitMQ:Uri"] ?? throw new InvalidOperationException("RabbitMQ:Uri configuration is missing."));
         try
         {
