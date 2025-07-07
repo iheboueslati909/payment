@@ -67,8 +67,13 @@ builder.Services.Scan(scan => scan
 // Payment providers (abstracted)
 builder.Services.Configure<StripeOptions>(
     builder.Configuration.GetSection("Stripe"));
-builder.Services.AddScoped<IPaymentProvider, StripePaymentProvider>();
 builder.Services.AddSingleton<IStripeSignatureVerifier, StripeSignatureVerifier>();
+
+// builder.Services.AddScoped<IPaymentProvider, StripePaymentProvider>();
+builder.Services.AddScoped<StripePaymentProvider>();
+// services.AddScoped<PayPalPaymentProvider>();
+builder.Services.AddScoped<IPaymentProviderFactory, PaymentProviderFactory>();
+
 
 // MassTransit/RabbitMQ
 builder.Services.AddMassTransit(x =>

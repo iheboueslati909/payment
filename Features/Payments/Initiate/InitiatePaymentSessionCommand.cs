@@ -10,5 +10,6 @@ namespace Features.Payments.InitiateSession
         public string Currency { get; set; }
         public string PaymentMethod { get; set; } // e.g., "stripe"
         public string IdempotencyKey { get; set; }
+        public PaymentProvider Provider { get; set; } = PaymentProvider.Stripe; // Default to Stripe
     }
 }

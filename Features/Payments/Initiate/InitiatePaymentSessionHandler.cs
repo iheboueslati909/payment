@@ -4,21 +4,22 @@ using PaymentGateway.Features.Payments.Models;
 using PaymentGateway.Infrastructure.Database;
 using PaymentGateway.Infrastructure.PaymentProviders;
 using PaymentGateway.Common.Enums;
-using Microsoft.Extensions.Configuration;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Features.Payments.InitiateSession
 {
     public class InitiatePaymentSessionHandler : ICommandHandler<InitiatePaymentSessionCommand, InitiatePaymentSessionResult>
     {
-        private readonly IPaymentProvider _paymentProvider;
+        // private readonly IPaymentProvider _paymentProvider;
+        private readonly IPaymentProviderFactory _paymentProviderFactory;
+
         private readonly AppDbContext _db;
         private readonly IConfiguration _configuration;
 
-        public InitiatePaymentSessionHandler(IPaymentProvider paymentProvider, AppDbContext db, IConfiguration configuration)
+        public InitiatePaymentSessionHandler(IPaymentProviderFactory paymentProviderFactory, AppDbContext db, IConfiguration configuration)
         {
-            _paymentProvider = paymentProvider;
+            // _paymentProvider = paymentProvider;
+                _paymentProviderFactory = paymentProviderFactory;
+
             _db = db;
             _configuration = configuration;
         }
@@ -35,8 +36,9 @@ namespace Features.Payments.InitiateSession
                 return new InitiatePaymentSessionResult { CheckoutUrl = existing.CheckoutUrl, PaymentId = existing.Id.ToString() };
             }
 
-            // Create Stripe Checkout session
-            var session = await _paymentProvider.CreateCheckoutSessionAsync(new CreateCheckoutSessionRequest
+            var provider = _paymentProviderFactory.Resolve(cmd.Provider);
+
+            var session = await provider.CreateCheckoutSessionAsync(new CreateCheckoutSessionRequest
             {
                 Amount = cmd.Amount,
                 Currency = cmd.Currency,
@@ -57,7 +59,8 @@ namespace Features.Payments.InitiateSession
                 Status = PaymentStatus.Pending,
                 IdempotencyKey = cmd.IdempotencyKey,
                 CheckoutUrl = session.CheckoutUrl,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                Provider = cmd.Provider
             };
 
             _db.Payments.Add(payment);
