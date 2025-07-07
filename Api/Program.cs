@@ -101,8 +101,14 @@ builder.Services.AddHostedService<OutboxWorker>();
 builder.Services.AddHealthChecks();
 builder.Services.AddSingleton<IRabbitMqConnectionChecker, RabbitMqConnectionChecker>();
 
-// --- App Pipeline ---
 
+var stripeWebhookSecret = builder.Configuration["STRIPE_WEBHOOK_SECRET"];
+if (string.IsNullOrWhiteSpace(stripeWebhookSecret))
+{
+    throw new InvalidOperationException("Missing required environment variable: STRIPE_WEBHOOK_SECRET");
+}
+
+// --- App Pipeline ---
 var app = builder.Build();
 
 // Global exception handling
