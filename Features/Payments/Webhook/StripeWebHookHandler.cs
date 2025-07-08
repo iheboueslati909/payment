@@ -73,13 +73,13 @@ namespace PaymentGateway.Features.Payments
                         if (stripeEvent.Type == EventTypes.PaymentIntentSucceeded)
                         {
                             paymentIntent = stripeEvent.Data.Object as PaymentIntent;
-                            ticketIntentId = paymentIntent?.Metadata?["TicketIntentId"] ?? paymentIntent?.Metadata?["IntendId"];
+                            ticketIntentId = paymentIntent?.Metadata?["IntendId"];
                             appId = paymentIntent?.Metadata?["AppId"];
                         }
                         else if (stripeEvent.Type == EventTypes.CheckoutSessionCompleted)
                         {
                             session = stripeEvent.Data.Object as Session;
-                            ticketIntentId = session?.Metadata?["TicketIntentId"] ?? session?.Metadata?["IntendId"];
+                            ticketIntentId = session?.Metadata?["IntendId"];
                             appId = session?.Metadata?["AppId"];
                         }
 
