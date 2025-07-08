@@ -82,7 +82,7 @@ builder.Services.AddMassTransit(x =>
     x.UsingRabbitMq((context, cfg) =>
     {
         var rabbitConfig = builder.Configuration.GetSection("RabbitMQ").Get<RabbitMqConfig>();
-        cfg.Host(new Uri(rabbitConfig.Host), h =>
+        cfg.Host(new Uri(rabbitConfig.Uri), h =>
         {
             h.Username(rabbitConfig.Username);
             h.Password(rabbitConfig.Password);
