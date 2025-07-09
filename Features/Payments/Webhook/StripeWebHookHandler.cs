@@ -42,10 +42,6 @@ namespace PaymentGateway.Features.Payments
             // Use the verifier to get the endpoint secret for this app (multi-tenant)
             var endpointSecret = _verifier.GetEndpointSecret(request); // Implement this method as needed
 
-            Console.WriteLine($"*************** Stripe Webhook received. JSON: {json}");
-            Console.WriteLine($"*************** Stripe Webhook received. Signature: {signature}");
-            Console.WriteLine($"*************** Stripe Webhook received. Endpoint Secret: {endpointSecret}");
-
             Event stripeEvent;
             try
             {
@@ -56,8 +52,16 @@ namespace PaymentGateway.Features.Payments
                 _logger.LogWarning("Stripe signature verification failed: {Message}", ex.Message);
                 return new StripeWebhookCommandResult { PaymentStatus = PaymentStatus.Failed.ToString(), EventType = "SignatureVerificationFailed" };
             }
+            catch (NullReferenceException ex)
+            {
+                _logger.LogWarning("Stripe signature header missing or malformed: {Message}", ex.Message);
+                return new StripeWebhookCommandResult
+                {
+                    PaymentStatus = PaymentStatus.Failed.ToString(),
+                    EventType = "SignatureHeaderMissingOrMalformed",
+                };
+            }
 
-            // Handle event types
             switch (stripeEvent.Type)
             {
                 case EventTypes.CheckoutSessionCompleted:
