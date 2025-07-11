@@ -35,6 +35,7 @@ public class OutboxProcessor
                     case nameof(PaymentProcessedEvent):
                         var paymentEvent = JsonSerializer.Deserialize<PaymentProcessedEvent>(message.Content) ?? throw new InvalidOperationException("Deserialized PaymentProcessedEvent is null.");
                         await _publishEndpoint.Publish(paymentEvent, cancellationToken);
+                        Console.WriteLine($"Published PaymentProcessedEvent: {paymentEvent}");
                         // Log the event or perform additional actions if needed
                         break;
                     // Add other event types here
