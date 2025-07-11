@@ -11,6 +11,7 @@ using MassTransit;
 using PaymentGateway.Features.Payments.Webhook;
 using Asp.Versioning;
 using Eventify.Payment.Api.Infrastructure.Messaging;
+using PaymentGateway.Infrastructure.Messaging.Contracts;
 // using PaymentGateway.Api.Middlewares; // For ExceptionHandlingMiddleware
 
 var builder = WebApplication.CreateBuilder(args);
@@ -78,15 +79,21 @@ builder.Services.AddScoped<IPaymentProviderFactory, PaymentProviderFactory>();
 // MassTransit/RabbitMQ
 builder.Services.AddMassTransit(x =>
 {
-    // x.SetKebabCaseEndpointNameFormatter();
     x.UsingRabbitMq((context, cfg) =>
     {
         var rabbitConfig = builder.Configuration.GetSection("RabbitMQ").Get<RabbitMqConfig>();
+
         cfg.Host(new Uri(rabbitConfig.Uri), h =>
         {
             h.Username(rabbitConfig.Username);
             h.Password(rabbitConfig.Password);
         });
+
+        cfg.Message<PaymentProcessedEvent>(x =>
+        {
+            x.SetEntityName("payment-processed"); // This becomes the exchange name
+        });
+
         cfg.ConfigureEndpoints(context);
     });
 });
