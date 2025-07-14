@@ -1,7 +1,7 @@
 using MassTransit;
+using Messaging.Contracts;
 using Microsoft.EntityFrameworkCore;
 using PaymentGateway.Infrastructure.Database;
-using PaymentGateway.Infrastructure.Messaging.Contracts;
 using System.Text.Json;
 
 namespace PaymentGateway.Infrastructure.Outbox;
@@ -35,8 +35,8 @@ public class OutboxProcessor
                     case nameof(PaymentProcessedEvent):
                         var paymentEvent = JsonSerializer.Deserialize<PaymentProcessedEvent>(message.Content) ?? throw new InvalidOperationException("Deserialized PaymentProcessedEvent is null.");
                         await _publishEndpoint.Publish(paymentEvent, cancellationToken);
-                        Console.WriteLine($"Published PaymentProcessedEvent: {paymentEvent}");
-                        // Log the event or perform additional actions if needed
+                        Console.WriteLine($"----------------Published PaymentProcessedEvent: {paymentEvent}");
+                        // Log the event
                         break;
                     // Add other event types here
                 }

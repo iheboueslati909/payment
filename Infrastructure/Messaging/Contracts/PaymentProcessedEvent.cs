@@ -1,4 +1,4 @@
-namespace PaymentGateway.Infrastructure.Messaging.Contracts;
+namespace Messaging.Contracts;
 
 public record PaymentProcessedEvent(
     Guid PaymentId,

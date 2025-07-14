@@ -1,7 +1,6 @@
 using PaymentGateway.Common.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using PaymentGateway.Infrastructure.Database;
-using PaymentGateway.Infrastructure.Messaging.Contracts;
 using PaymentGateway.Common.Enums;
 using Stripe;
 using Stripe.Checkout;
@@ -9,6 +8,7 @@ using System.Text;
 using PaymentGateway.Features.Payments.Webhook;
 using PaymentGateway.Infrastructure.Outbox;
 using System.Text.Json;
+using Messaging.Contracts;
 
 namespace PaymentGateway.Features.Payments
 {

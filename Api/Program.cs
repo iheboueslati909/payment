@@ -11,7 +11,7 @@ using MassTransit;
 using PaymentGateway.Features.Payments.Webhook;
 using Asp.Versioning;
 using Eventify.Payment.Api.Infrastructure.Messaging;
-using PaymentGateway.Infrastructure.Messaging.Contracts;
+using Messaging.Contracts;
 // using PaymentGateway.Api.Middlewares; // For ExceptionHandlingMiddleware
 
 var builder = WebApplication.CreateBuilder(args);
@@ -91,7 +91,7 @@ builder.Services.AddMassTransit(x =>
 
         cfg.Message<PaymentProcessedEvent>(x =>
         {
-            x.SetEntityName("payment-processed"); // This becomes the exchange name
+            x.SetEntityName("payment-processed");
         });
 
         cfg.ConfigureEndpoints(context);
